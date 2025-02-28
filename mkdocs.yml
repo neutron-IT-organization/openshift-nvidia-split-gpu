@@ -1,4 +1,4 @@
-site_name: RealTime on Openshift
+site_name: Nvidia on Openshift
 theme:
   name: material
   features:
@@ -7,7 +7,7 @@ theme:
   logo: assets/logo.png
 plugins:
 - search
-repo_url: https://github.com/neutron-IT-organization/openshift-realtime
+repo_url: https://github.com/neutron-IT-organization/openshift-nvidia-split-gpu.git
 repo_name: neutron-IT-organization/openshiftt
 docs_dir: content
 extra_css:
