@@ -8,8 +8,7 @@ Dans le monde de l'informatique moderne, l'optimisation des ressources est cruci
 
 ## Pourquoi Partager les GPU ?
 
-Les GPU sont des ressources coûteuses et puissantes. Dans un cluster OpenShift, il est souvent nécessaire de partager ces ressources entre plusieurs \
-workloads pour maximiser leur utilisation. Voici les principales méthodes de partage de GPU :
+Les GPU sont des ressources coûteuses et puissantes. Dans un cluster OpenShift, il est souvent nécessaire de partager ces ressources entre plusieurs workloads pour maximiser leur utilisation. Voici les principales méthodes de partage de GPU :
 
 ### MIG (Multi-Instance GPU)
 
@@ -96,6 +95,8 @@ data:
             replicas: 8
 ```
 
+Ici avec "replicas: 8" on doit avoir 8 pod capable d'untiliser 1 gpu en mode time-slicing.
+
 ### Étape 4 : Patch du GPU Operator
 
 Appliquez la ConfigMap au GPU Operator pour activer le Time Slicing.
@@ -136,7 +137,7 @@ Vérifiez que la capacité du GPU a bien été mise à jour :
 oc get node --selector=nvidia.com/gpu.product=${GPU_NAME}-SHARED -o json | jq '.items[0].status.capacity'
 ```
 
-**Résultat attendu :**
+**Exemple Résultat :**
 
 ```json
 {
@@ -152,6 +153,8 @@ oc get node --selector=nvidia.com/gpu.product=${GPU_NAME}-SHARED -o json | jq '.
   "pods": "250"
 }
 ```
+
+On observe notamment que la configuraiton "nvidia.com/gpu": "8" est maintenant appliqué.
 
 ### Étape 7 : Relancer le Job de Test
 
