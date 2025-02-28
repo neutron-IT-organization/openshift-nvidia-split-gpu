@@ -1,0 +1,779 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+      <link rel="icon" href="assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.5">
+    
+    
+      
+        <title>Nvidia on Openshift</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.8608ea7d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="stylesheets/extra.css">
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#introduction" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="." title="Nvidia on Openshift" class="md-header__button md-logo" aria-label="Nvidia on Openshift" data-md-component="logo">
+      
+  <img src="assets/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Nvidia on Openshift
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Configuration de GPU sur OpenShift
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/neutron-IT-organization/openshift-nvidia-split-gpu.git" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    neutron-IT-organization/openshiftt
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="." class="md-tabs__link">
+        
+  
+    
+  
+  Configuration de GPU sur OpenShift
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="." title="Nvidia on Openshift" class="md-nav__button md-logo" aria-label="Nvidia on Openshift" data-md-component="logo">
+      
+  <img src="assets/logo.png" alt="logo">
+
+    </a>
+    Nvidia on Openshift
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/neutron-IT-organization/openshift-nvidia-split-gpu.git" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    neutron-IT-organization/openshiftt
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Configuration de GPU sur OpenShift
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="." class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Configuration de GPU sur OpenShift
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Introduction
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pourquoi-partager-les-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pourquoi Partager les GPU ?
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pourquoi Partager les GPU ?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mig-multi-instance-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      MIG (Multi-Instance GPU)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vgpu-avec-openshift-virtualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      vGPU avec OpenShift Virtualization
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#time-slicing-pour-openshift" class="md-nav__link">
+    <span class="md-ellipsis">
+      Time Slicing pour OpenShift
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-du-mode-time-slicing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration du Mode Time Slicing
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration du Mode Time Slicing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#etape-1-deploiement-dun-job-de-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      Étape 1 : Déploiement d'un Job de Test
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#etape-2-recuperation-du-nom-du-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Étape 2 : Récupération du Nom du GPU
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#etape-3-creation-de-la-configmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      Étape 3 : Création de la ConfigMap
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#etape-4-patch-du-gpu-operator" class="md-nav__link">
+    <span class="md-ellipsis">
+      Étape 4 : Patch du GPU Operator
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#etape-5-configuration-du-node" class="md-nav__link">
+    <span class="md-ellipsis">
+      Étape 5 : Configuration du Node
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#etape-6-validation-de-la-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Étape 6 : Validation de la Configuration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#etape-7-relancer-le-job-de-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      Étape 7 : Relancer le Job de Test
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conclusion
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Introduction
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pourquoi-partager-les-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pourquoi Partager les GPU ?
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pourquoi Partager les GPU ?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mig-multi-instance-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      MIG (Multi-Instance GPU)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vgpu-avec-openshift-virtualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      vGPU avec OpenShift Virtualization
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#time-slicing-pour-openshift" class="md-nav__link">
+    <span class="md-ellipsis">
+      Time Slicing pour OpenShift
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-du-mode-time-slicing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration du Mode Time Slicing
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration du Mode Time Slicing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#etape-1-deploiement-dun-job-de-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      Étape 1 : Déploiement d'un Job de Test
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#etape-2-recuperation-du-nom-du-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      Étape 2 : Récupération du Nom du GPU
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#etape-3-creation-de-la-configmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      Étape 3 : Création de la ConfigMap
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#etape-4-patch-du-gpu-operator" class="md-nav__link">
+    <span class="md-ellipsis">
+      Étape 4 : Patch du GPU Operator
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#etape-5-configuration-du-node" class="md-nav__link">
+    <span class="md-ellipsis">
+      Étape 5 : Configuration du Node
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#etape-6-validation-de-la-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Étape 6 : Validation de la Configuration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#etape-7-relancer-le-job-de-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      Étape 7 : Relancer le Job de Test
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conclusion
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="configuration-de-gpu-sur-openshift">Configuration de GPU sur OpenShift</h1>
+<h2 id="introduction">Introduction</h2>
+<p>Dans le monde de l'informatique moderne, l'optimisation des ressources est cruciale pour maximiser les performances et réduire les coûts. Les GPU (Graphics Processing Units) jouent un rôle central dans de nombreuses applications, allant de l'intelligence artificielle au rendu graphique. Cependant, leur utilisation efficace dans un environnement de conteneurs comme OpenShift peut être un défi. Ce document vous guidera à travers les différentes méthodes de partage de GPU sur OpenShift, en mettant l'accent sur le Time Slicing, et vous montrera comment le configurer pour améliorer l'utilisation des ressources GPU.</p>
+<p><img alt="Nvidia sharing" src="images/nvidia-arch.svg" /></p>
+<h2 id="pourquoi-partager-les-gpu">Pourquoi Partager les GPU ?</h2>
+<p>Les GPU sont des ressources coûteuses et puissantes. Dans un cluster OpenShift, il est souvent nécessaire de partager ces ressources entre plusieurs workloads pour maximiser leur utilisation. Voici les principales méthodes de partage de GPU :</p>
+<h3 id="mig-multi-instance-gpu">MIG (Multi-Instance GPU)</h3>
+<p>MIG permet de diviser un GPU physique en plusieurs instances plus petites, chacune avec ses propres ressources dédiées. Cela permet à plusieurs workloads de s'exécuter simultanément sur le même GPU, améliorant ainsi l'utilisation des ressources. Cependant, cette méthode nécessite un matériel compatible et peut être complexe à configurer.</p>
+<h3 id="vgpu-avec-openshift-virtualization">vGPU avec OpenShift Virtualization</h3>
+<p>vGPU virtualise un GPU physique et le partage entre plusieurs machines virtuelles (VM). Chaque VM reçoit une partie des ressources du GPU, permettant une utilisation plus flexible. Cette méthode est idéale pour les environnements où les workloads nécessitent une isolation complète des ressources GPU.</p>
+<h3 id="time-slicing-pour-openshift">Time Slicing pour OpenShift</h3>
+<p>Time Slicing permet de partager un GPU entre plusieurs pods en allouant des tranches de temps d'exécution à chaque pod. Contrairement à MIG et vGPU, Time Slicing ne partitionne pas les ressources GPU mais permet une utilisation concurrente en répartissant le temps d'exécution. Cette méthode est particulièrement utile pour les workloads qui n'ont pas besoin d'une utilisation continue du GPU.</p>
+<h2 id="configuration-du-mode-time-slicing">Configuration du Mode Time Slicing</h2>
+<h3 id="etape-1-deploiement-dun-job-de-test">Étape 1 : Déploiement d'un Job de Test</h3>
+<p>Pour commencer, déployons un job de test pour vérifier que le Time Slicing n'est pas encore configuré. Ce job ne fonctionnera pas correctement car le Time Slicing n'est pas activé.</p>
+<pre><code class="language-yaml">apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dcgm-prof-tester
+spec:
+  parallelism: 4
+  template:
+    metadata:
+      labels:
+        app: dcgm-prof-tester
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: dcgmproftester12
+          image: nvcr.io/nvidia/cloud-native/dcgm:3.3.8-1-ubuntu22.04
+          command: [&quot;/usr/bin/dcgmproftester12&quot;]
+          args: [&quot;--no-dcgm-validation&quot;, &quot;-t 1004&quot;, &quot;-d 30&quot;]
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+          securityContext:
+            capabilities:
+              add: [&quot;SYS_ADMIN&quot;]
+</code></pre>
+<p>Appliquez ce job sur OpenShift :</p>
+<pre><code class="language-sh">oc apply -f dcgm-prof-tester.yaml
+</code></pre>
+<p><img alt="job failed" src="images/job-failed.png" /></p>
+<p><strong>Résultat attendu :</strong></p>
+<p>Si vous n'avez q'un seul GPU vous devez voir qu'un seul job fonctionne et que les 3 autres echouent.</p>
+<h3 id="etape-2-recuperation-du-nom-du-gpu">Étape 2 : Récupération du Nom du GPU</h3>
+<p>Stockez le nom de votre GPU dans une variable d'environnement :</p>
+<pre><code class="language-sh">GPU_NAME=$(oc get node -o jsonpath='{.items[*].metadata.labels.nvidia\.com/gpu\.product}')
+</code></pre>
+<h3 id="etape-3-creation-de-la-configmap">Étape 3 : Création de la ConfigMap</h3>
+<p>Créez une ConfigMap pour configurer le Time Slicing. Cette ConfigMap spécifie les paramètres de partage pour le GPU.</p>
+<pre><code class="language-yaml">apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: device-plugin-config
+  namespace: nvidia-gpu-operator
+data:
+  ${GPU_NAME}: |-
+    version: v1
+    sharing:
+      timeSlicing:
+        renameByDefault: false
+        resources:
+          - name: nvidia.com/gpu
+            replicas: 8
+</code></pre>
+<p>Ici avec "replicas: 8" on doit avoir 8 pod capable d'untiliser 1 gpu en mode time-slicing.</p>
+<h3 id="etape-4-patch-du-gpu-operator">Étape 4 : Patch du GPU Operator</h3>
+<p>Appliquez la ConfigMap au GPU Operator pour activer le Time Slicing.</p>
+<pre><code class="language-sh">oc patch clusterpolicy gpu-cluster-policy \
+    -n nvidia-gpu-operator --type merge \
+    -p '{&quot;spec&quot;: {&quot;devicePlugin&quot;: {&quot;config&quot;: {&quot;name&quot;: &quot;device-plugin-config&quot;}}}}'
+</code></pre>
+<p><strong>Résultat attendu :</strong></p>
+<pre><code>clusterpolicy.nvidia.com/gpu-cluster-policy patched
+</code></pre>
+<h3 id="etape-5-configuration-du-node">Étape 5 : Configuration du Node</h3>
+<p>Appliquez ensuite le label correspondant :</p>
+<pre><code class="language-sh">oc label --overwrite node \
+    --selector=nvidia.com/gpu.product=${GPU_NAME} \
+    nvidia.com/device-plugin.config=${GPU_NAME}
+</code></pre>
+<p><strong>Résultat attendu :</strong></p>
+<pre><code>node/&lt;node-name&gt; labeled
+</code></pre>
+<h3 id="etape-6-validation-de-la-configuration">Étape 6 : Validation de la Configuration</h3>
+<p>Vérifiez que la capacité du GPU a bien été mise à jour :</p>
+<pre><code class="language-sh">oc get node --selector=nvidia.com/gpu.product=${GPU_NAME}-SHARED -o json | jq '.items[0].status.capacity'
+</code></pre>
+<p><strong>Exemple Résultat :</strong></p>
+<pre><code class="language-json">{
+  &quot;cpu&quot;: &quot;28&quot;,
+  &quot;devices.kubevirt.io/kvm&quot;: &quot;1k&quot;,
+  &quot;devices.kubevirt.io/tun&quot;: &quot;1k&quot;,
+  &quot;devices.kubevirt.io/vhost-net&quot;: &quot;1k&quot;,
+  &quot;ephemeral-storage&quot;: &quot;975760576Ki&quot;,
+  &quot;hugepages-1Gi&quot;: &quot;0&quot;,
+  &quot;hugepages-2Mi&quot;: &quot;0&quot;,
+  &quot;memory&quot;: &quot;131711436Ki&quot;,
+  &quot;nvidia.com/gpu&quot;: &quot;8&quot;,
+  &quot;pods&quot;: &quot;250&quot;
+}
+</code></pre>
+<p>On observe notamment que la configuraiton "nvidia.com/gpu": "8" est maintenant appliqué.</p>
+<h3 id="etape-7-relancer-le-job-de-test">Étape 7 : Relancer le Job de Test</h3>
+<p>Relancez le job de test pour vérifier que le Time Slicing est bien activé.</p>
+<pre><code class="language-sh">oc delete job dcgm-prof-tester
+oc apply -f dcgm-prof-tester.yaml
+</code></pre>
+<p><strong>Résultat attendu :</strong></p>
+<p>Le job doit s'exécuter correctement avec plusieurs pods partageant le GPU sans erreur.</p>
+<p><img alt="job success" src="images/job-win.png" /></p>
+<h2 id="conclusion">Conclusion</h2>
+<p>En configurant le mode Time Slicing, vous optimisez l'utilisation des ressources GPU dans votre cluster OpenShift. Cette méthode permet de partager efficacement les GPU entre plusieurs workloads, améliorant ainsi les performances globales et réduisant les coûts. Dans un prochain blogpost, nous explorerons comment configurer OpenShift avec vGPU pour une utilisation encore plus flexible des ressources GPU.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": ".", "features": ["navigation.tabs", "navigation.indexes"], "search": "assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="assets/javascripts/bundle.f1b6f286.min.js"></script>
+      
+    
+  </body>
+</html>
