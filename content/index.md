@@ -1,219 +1,102 @@
----
-title: Home
----
 
-# Utiliser les capacités temps réel d'OpenShift
+# Configuration de GPU sur OpenShift
 
-Face à l'essor des applications à contraintes temps réel dans les environnements industriels et financiers, les entreprises doivent repenser leurs infrastructures pour offrir à la fois flexibilité, faible latence et robustesse. OpenShift, la plateforme de Red Hat basée sur Kubernetes, propose des capacités temps réel pour des workloads containers et machines virtuelles, tout en garantissant la sécurité de ceux-ci.   
-Cet article explore comment configurer une infrastructure mixte *- containers et VMs -* optimisée pour les contraintes temps réel.
+## Introduction
 
-## Contexte et enjeux des contraintes temps réel sur OpenShift
+Dans le monde de l'informatique moderne, l'optimisation des ressources est cruciale pour maximiser les performances et réduire les coûts. Les GPU (Graphics Processing Units) jouent un rôle central dans de nombreuses applications, allant de l'intelligence artificielle au rendu graphique. Cependant, leur utilisation efficace dans un environnement de conteneurs comme OpenShift peut être un défi. Ce document vous guidera à travers les différentes méthodes de partage de GPU sur OpenShift, en mettant l'accent sur le Time Slicing, et vous montrera comment le configurer pour améliorer l'utilisation des ressources GPU.
 
-### Les défis des workloads temps réel
+## Pourquoi Partager les GPU ?
 
-Les applications temps réel exigent un traitement des données et une réponse aux événements dans des délais extrêmement courts et stables. Parmi les enjeux principaux, on retrouve :  
-- **La prévisibilité du temps de réponse** : L'isolation des ressources (CPU, mémoire et E/S) est indispensable pour éviter les interférences.  
-- **La latence réseau minimale** : Pour les communications critiques, il est souvent nécessaire d'utiliser des interfaces réseau qui contournent les couches de virtualisation classiques.  
-- **La gestion simultanée de containers et de VMs** : Certains workloads hérités fonctionnant en VM doivent cohabiter avec des applications nativement containerisées, sans compromettre la performance globale.  
+Les GPU sont des ressources coûteuses et puissantes. Dans un cluster OpenShift, il est souvent nécessaire de partager ces ressources entre plusieurs workloads pour maximiser leur utilisation. Voici les principales méthodes de partage de GPU :
 
-### OpenShift comme plateforme unifiée
+### MIG (Multi-Instance GPU)
 
-OpenShift permet de réunir ces deux types de workloads à l'aide de son opérateur OpenShift Virtualization. Ainsi, il devient possible de gérer dans une même plateforme des applications containerisées ultra réactives et des VMs pour des charges traditionnelles. Cette approche facilite notamment la migration progressive des applications vers des architectures modernes tout en garantissant un temps de réponse optimal.
+MIG permet de diviser un GPU physique en plusieurs instances plus petites, chacune avec ses propres ressources dédiées. Cela permet à plusieurs workloads de s'exécuter simultanément sur le même GPU, améliorant ainsi l'utilisation des ressources. Cependant, cette méthode nécessite un matériel compatible et peut être complexe à configurer.
 
-## Intégration de containers et VMs pour des workloads temps réel
+### vGPU avec OpenShift Virtualization
 
-### Configuration d'OpenShift
+vGPU virtualise un GPU physique et le partage entre plusieurs machines virtuelles (VM). Chaque VM reçoit une partie des ressources du GPU, permettant une utilisation plus flexible. Cette méthode est idéale pour les environnements où les workloads nécessitent une isolation complète des ressources GPU.
 
-Pour exécuter des workloads temps réel, OpenShift doit être configuré avec :  
-- **Un noyau temps réel** : Disponible via l'opérateur OpenShift RT, ce noyau permet d'améliorer la stabilité des temps de réponse.  
-- **L'isolation des CPUs** : En dédiant des cœurs spécifiques aux tâches critiques, on réduit la variabilité des performances.  
-- **L'optimisation des interruptions** : Ajuster les IRQs et configurer l'affinité CPU permet d'éviter les interruptions non désirées.  
-- **L'utilisation de HugePages** : Cela optimise l'utilisation mémoire et améliore la gestion des latences.   
-Tout ceci peut être configuré à l'aide d'un `PerformanceProfile`.
+### Time Slicing pour OpenShift
 
-![RT-isolation](images/RT-isolation.png)
+Time Slicing permet de partager un GPU entre plusieurs pods en allouant des tranches de temps d'exécution à chaque pod. Contrairement à MIG et vGPU, Time Slicing ne partitionne pas les ressources GPU mais permet une utilisation concurrente en répartissant le temps d'exécution. Cette méthode est particulièrement utile pour les workloads qui n'ont pas besoin d'une utilisation continue du GPU.
 
-### Configuration d'un PerformanceProfile
+## Configuration du Mode Time Slicing
 
-L'activation des performances temps réel passe par la création d'un `PerformanceProfile` dédié :
+### Étape 1 : Déploiement d'un Job de Test
+
+Pour commencer, déployons un job de test pour vérifier que le Time Slicing n'est pas encore configuré. Ce job ne fonctionnera pas correctement car le Time Slicing n'est pas activé.
+
 ```yaml
----
-apiVersion: performance.openshift.io/v2
-kind: PerformanceProfile
+apiVersion: batch/v1
+kind: Job
 metadata:
-  name: rt-profile
+  name: dcgm-prof-tester
 spec:
-  cpu:
-    isolated: 2-7
-    reserved: 0-1
-  hugepages:
-    defaultHugepagesSize: 1G
-    pages:
-      - count: 4
-        size: 1G
-  realTimeKernel:
-    enabled: true
-  workloadHints:
-    realTime: true
-  nodeSelector:
-    node-role.kubernetes.io/worker-rt: ""
-```
-
-### Déploiement d'un container temps réel
-
-Pour déployer un container temps réel sur OpenShift en QoS guaranteed :
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: rt-container
-spec:
-  containers:
-  - name: app-rt
-    image: registry.example.com/rt-app:latest
-    resources:
-      requests:
-        cpu: "2"
-        memory: "2Gi"
-        hugepages-1Gi: "2Gi"
-      limits:
-        cpu: "2"
-        memory: "2Gi"
-        hugepages-1Gi: "2Gi"
-    securityContext:
-      capabilities:
-        add:
-        - SYS_NICE # Allows the container to adjust scheduling priorities.
-        - IPC_LOCK # Enables locking memory to prevent swapping (used in real-time applications).
-```
-
-### Explication des QoS dans OpenShift
-
-`guaranteed`: Cette classe garantit l'allocation des ressources, elle est définie lorsqu'on spécifie `requests`égal à `limits`.
-
-`burstable` : Cette classe permet d'allouer plus de ressources si celles-ci sont disponibles, elle est définie lorsqu'on spécifie `limits` supérieur à `requests`.
-
-`bestEffort` : Cette classe utilise les ressources disponibles dynamiquement et peut être expulsé si le nœud manque de ressources, elle est définie lorsqu'on ne spécifie aucune `requests` et aucune `limits`.
-
-### Déploiement d'une VM temps réel
-
-Pour créer une VM temps réel avec OpenShift Virtualization :
-```yaml
-apiVersion: kubevirt.io/v1
-kind: VirtualMachine
-metadata:
-  name: rt-vm
-spec:
-  running: true
+  parallelism: 4
   template:
+    metadata:
+      labels:
+        app: dcgm-prof-tester
     spec:
-      domain:
-        cpu:
-          model: "host-passthrough" # Uses the host CPU model for optimal performance.
-          cores: 2 # Number of virtual CPU cores allocated to the VM.
-          dedicatedCpuPlacement: true # Ensures CPU cores are dedicated for the VM.
-          isolateEmulatorThread: true # Isolates the emulator thread for better latency.
-        memory:
-          hugepages:
-            pageSize: "1Gi"
-        resources:
-          requests:
-            memory: "4Gi"
-          limits:
-            memory: "4Gi"
-        devices:
-          disks:
-            - name: rootdisk
-              disk:
-                bus: virtio
-          interfaces:
-            - name: default
-              bridge: {}
-      networks:
-        - name: default
-          pod: {}
-  dataVolumeTemplates:
-    - metadata:
-        name: rt-vm-disk
-      spec:
-        source:
-          http:
-            url: "http://example.com/rt-vm.qcow2"
-        pvc:
-          accessModes:
-            - ReadWriteOnce
+      restartPolicy: OnFailure
+      containers:
+        - name: dcgmproftester12
+          image: nvcr.io/nvidia/cloud-native/dcgm:3.3.8-1-ubuntu22.04
+          command: ["/usr/bin/dcgmproftester12"]
+          args: ["--no-dcgm-validation", "-t 1004", "-d 30"]
           resources:
-            requests:
-              storage: 10Gi
+            limits:
+              nvidia.com/gpu: 1
+          securityContext:
+            capabilities:
+              add: ["SYS_ADMIN"]
 ```
 
-### Explication des paramètres clés des VMs temps réel
+### Étape 2 : Création de la ConfigMap
 
-`host-passthrough` : Ce paramètre permet de passer directement le modèle de CPU de l'hôte à la VM, garantissant ainsi une compatibilité et une performance maximales. Il évite l'émulation de certaines instructions CPU, réduisant ainsi la latence et augmentant la stabilité du temps de réponse.
-
-`dedicatedCpuPlacement` : L'activation de cette option garantit que les cœurs CPU alloués à la VM ne seront pas partagés avec d'autres workloads, améliorant ainsi la prévisibilité des performances et minimisant l'interférence avec d'autres processus exécutés sur le nœud.
-
-`isolateEmulatorThread` : L'activation de ce paramètre permet d'isoler le thread de l'émulateur, ce qui réduit la latence de l'émulation et améliore les performances en cas de workloads nécessitant un traitement rapide et déterministe.
-
-## Utilisation d'une interface réseau L2
-
-Les applications temps réel requièrent souvent une communication réseau à faible latence et haut débit. L'utilisation d'une interface réseau L2 permet de réduire la surcharge introduite par les couches de virtualisation réseau classiques et d'offrir une connectivité directe entre les workloads. 
-![OSI Model](images/OSI-model.png){: .scaled-image }  
-
-OpenShift permet d'exploiter Multus pour créer des interfaces L2 en utilisant macvlan.
-![macvlan](images/macvaln.png){: .scaled-image }
-
-### Création d'un NAD Multus en macvlan
-
-```yaml
-apiVersion: k8s.cni.cncf.io/v1
-kind: NetworkAttachmentDefinition
-metadata:
-  name: l2-interface
-  namespace: example-namespace
-spec:
-  config: '{
-    "cniVersion": "0.3.1",
-    "type": "macvlan",
-    "master": "enp3s0",
-    "mode": "bridge",
-    "ipam": { "type": "dhcp" }
-  }'
-```
-
-### Association d'une interface L2 à un container
+Créez une ConfigMap pour configurer le Time Slicing. Cette ConfigMap spécifie les paramètres de partage pour le GPU.
 
 ```yaml
 apiVersion: v1
-kind: Pod
+kind: ConfigMap
 metadata:
-  name: rt-container-l2
-  annotations:
-    k8s.v1.cni.cncf.io/networks: example-namespace/l2-interface
-spec:
-  containers:
-  - name: rt-app
-    image: registry.example.com/rt-app:latest
+  name: device-plugin-config
+  namespace: nvidia-gpu-operator
+data:
+  NVIDIA-RTX-A2000-12GB: |-
+    version: v1
+    sharing:
+      timeSlicing:
+        renameByDefault: false
+        resources:
+          - name: nvidia.com/gpu
+            replicas: 8
 ```
 
-### Association d'une interface L2 à une VM
+### Étape 3 : Patch du GPU Operator
 
-```yaml
-spec:
-  template:
-    spec:
-      networks:
-        - name: l2-net
-          multus:
-            networkName: example-namespace/l2-interface
-      domain:
-        devices:
-          interfaces:
-            - name: l2-net
-              bridge: {}
+Appliquez la ConfigMap au GPU Operator pour activer le Time Slicing.
+
+```sh
+oc patch clusterpolicy gpu-cluster-policy \
+    -n nvidia-gpu-operator --type merge \
+    -p '{"spec": {"devicePlugin": {"config": {"name": "device-plugin-config"}}}}'
+```
+
+### Étape 4 : Configuration du Node
+
+Récupérez le nom de votre GPU dans les labels de votre node (`nvidia.com/gpu.product`) et patch le node pour lui indiquer d'utiliser le plugin de Time Slicing.
+
+```sh
+oc label --overwrite node \
+    --selector=nvidia.com/gpu.product=NVIDIA-RTX-A2000-12GB \
+    nvidia.com/device-plugin.config=NVIDIA-RTX-A2000-12GB
 ```
 
 ## Conclusion
 
-OpenShift offre une plateforme unifiée pour exécuter des workloads temps réel en combinant containers et machines virtuelles. Grâce à ses capacités d'optimisation des performances, de gestion fine des ressources et de mise en réseau avancée, il répond aux exigences des environnements industriels et financiers critiques. En configurant correctement les ressources CPU, mémoire et réseau, il est possible d'atteindre une faible latence et une grande prévisibilité, garantissant ainsi la stabilité et la performance des applications temps réel.
+En configurant le mode Time Slicing, vous optimisez l'utilisation des ressources GPU dans votre cluster OpenShift. Cette méthode permet de partager efficacement les GPU entre plusieurs workloads, améliorant ainsi les performances globales et réduisant les coûts. Dans un prochain blogpost, nous explorerons comment configurer OpenShift avec vGPU pour une utilisation encore plus flexible des ressources GPU.
 
+
+![RT-isolation](images/RT-isolation.png)
