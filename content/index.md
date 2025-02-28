@@ -4,6 +4,7 @@
 
 Dans le monde de l'informatique moderne, l'optimisation des ressources est cruciale pour maximiser les performances et réduire les coûts. Les GPU (Graphics Processing Units) jouent un rôle central dans de nombreuses applications, allant de l'intelligence artificielle au rendu graphique. Cependant, leur utilisation efficace dans un environnement de conteneurs comme OpenShift peut être un défi. Ce document vous guidera à travers les différentes méthodes de partage de GPU sur OpenShift, en mettant l'accent sur le Time Slicing, et vous montrera comment le configurer pour améliorer l'utilisation des ressources GPU.
 
+![Nvidia sharing](images/nvidia-arch.svg)
 
 ## Pourquoi Partager les GPU ?
 
@@ -59,6 +60,12 @@ Appliquez ce job sur OpenShift :
 ```sh
 oc apply -f dcgm-prof-tester.yaml
 ```
+
+![job failed](images/job-failed.png)
+
+**Résultat attendu :**
+
+Si vous n'avez q'un seul GPU vous devez voir qu'un seul job fonctionne et que les 3 autres echouent.
 
 ### Étape 2 : Récupération du Nom du GPU
 
@@ -158,6 +165,8 @@ oc apply -f dcgm-prof-tester.yaml
 **Résultat attendu :**
 
 Le job doit s'exécuter correctement avec plusieurs pods partageant le GPU sans erreur.
+
+![job success](images/job-win.png)
 
 ## Conclusion
 
