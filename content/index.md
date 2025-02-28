@@ -1,4 +1,3 @@
-
 # Configuration de GPU sur OpenShift
 
 ## Introduction
@@ -86,9 +85,21 @@ oc patch clusterpolicy gpu-cluster-policy \
     -p '{"spec": {"devicePlugin": {"config": {"name": "device-plugin-config"}}}}'
 ```
 
+**Résultat attendu :**
+
+```
+clusterpolicy.nvidia.com/gpu-cluster-policy patched
+```
+
 ### Étape 4 : Configuration du Node
 
-Récupérez le nom de votre GPU dans les labels de votre node (`nvidia.com/gpu.product`) et patch le node pour lui indiquer d'utiliser le plugin de Time Slicing.
+Récupérez le nom de votre GPU dans les labels de votre node :
+
+```sh
+oc get node -o jsonpath='{.items[*].metadata.labels.nvidia\.com/gpu\.product}'
+```
+
+Appliquez ensuite le label correspondant :
 
 ```sh
 oc label --overwrite node \
@@ -96,9 +107,26 @@ oc label --overwrite node \
     nvidia.com/device-plugin.config=NVIDIA-RTX-A2000-12GB
 ```
 
+**Résultat attendu :**
+
+```
+node/<node-name> labeled
+```
+
+### Étape 5 : Relancer le Job de Test
+
+Relancez le job de test pour vérifier que le Time Slicing est bien activé.
+
+```sh
+oc delete job dcgm-prof-tester
+oc apply -f dcgm-prof-tester.yaml
+```
+
+**Résultat attendu :**
+
+Le job doit s'exécuter correctement avec plusieurs pods partageant le GPU sans erreur.
+
 ## Conclusion
 
 En configurant le mode Time Slicing, vous optimisez l'utilisation des ressources GPU dans votre cluster OpenShift. Cette méthode permet de partager efficacement les GPU entre plusieurs workloads, améliorant ainsi les performances globales et réduisant les coûts. Dans un prochain blogpost, nous explorerons comment configurer OpenShift avec vGPU pour une utilisation encore plus flexible des ressources GPU.
-
-
 
