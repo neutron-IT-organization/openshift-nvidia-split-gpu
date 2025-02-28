@@ -4,11 +4,11 @@
 
 Dans le monde de l'informatique moderne, l'optimisation des ressources est cruciale pour maximiser les performances et réduire les coûts. Les GPU (Graphics Processing Units) jouent un rôle central dans de nombreuses applications, allant de l'intelligence artificielle au rendu graphique. Cependant, leur utilisation efficace dans un environnement de conteneurs comme OpenShift peut être un défi. Ce document vous guidera à travers les différentes méthodes de partage de GPU sur OpenShift, en mettant l'accent sur le Time Slicing, et vous montrera comment le configurer pour améliorer l'utilisation des ressources GPU.
 
-![RT-isolation](images/nvidia-arch.svg)
 
 ## Pourquoi Partager les GPU ?
 
-Les GPU sont des ressources coûteuses et puissantes. Dans un cluster OpenShift, il est souvent nécessaire de partager ces ressources entre plusieurs workloads pour maximiser leur utilisation. Voici les principales méthodes de partage de GPU :
+Les GPU sont des ressources coûteuses et puissantes. Dans un cluster OpenShift, il est souvent nécessaire de partager ces ressources entre plusieurs \
+workloads pour maximiser leur utilisation. Voici les principales méthodes de partage de GPU :
 
 ### MIG (Multi-Instance GPU)
 
@@ -54,7 +54,21 @@ spec:
               add: ["SYS_ADMIN"]
 ```
 
-### Étape 2 : Création de la ConfigMap
+Appliquez ce job sur OpenShift :
+
+```sh
+oc apply -f dcgm-prof-tester.yaml
+```
+
+### Étape 2 : Récupération du Nom du GPU
+
+Stockez le nom de votre GPU dans une variable d'environnement :
+
+```sh
+GPU_NAME=$(oc get node -o jsonpath='{.items[*].metadata.labels.nvidia\.com/gpu\.product}')
+```
+
+### Étape 3 : Création de la ConfigMap
 
 Créez une ConfigMap pour configurer le Time Slicing. Cette ConfigMap spécifie les paramètres de partage pour le GPU.
 
@@ -65,7 +79,7 @@ metadata:
   name: device-plugin-config
   namespace: nvidia-gpu-operator
 data:
-  NVIDIA-RTX-A2000-12GB: |-
+  ${GPU_NAME}: |-
     version: v1
     sharing:
       timeSlicing:
@@ -75,7 +89,7 @@ data:
             replicas: 8
 ```
 
-### Étape 3 : Patch du GPU Operator
+### Étape 4 : Patch du GPU Operator
 
 Appliquez la ConfigMap au GPU Operator pour activer le Time Slicing.
 
@@ -91,20 +105,14 @@ oc patch clusterpolicy gpu-cluster-policy \
 clusterpolicy.nvidia.com/gpu-cluster-policy patched
 ```
 
-### Étape 4 : Configuration du Node
-
-Récupérez le nom de votre GPU dans les labels de votre node :
-
-```sh
-oc get node -o jsonpath='{.items[*].metadata.labels.nvidia\.com/gpu\.product}'
-```
+### Étape 5 : Configuration du Node
 
 Appliquez ensuite le label correspondant :
 
 ```sh
 oc label --overwrite node \
-    --selector=nvidia.com/gpu.product=NVIDIA-RTX-A2000-12GB \
-    nvidia.com/device-plugin.config=NVIDIA-RTX-A2000-12GB
+    --selector=nvidia.com/gpu.product=${GPU_NAME} \
+    nvidia.com/device-plugin.config=${GPU_NAME}
 ```
 
 **Résultat attendu :**
@@ -113,7 +121,32 @@ oc label --overwrite node \
 node/<node-name> labeled
 ```
 
-### Étape 5 : Relancer le Job de Test
+### Étape 6 : Validation de la Configuration
+
+Vérifiez que la capacité du GPU a bien été mise à jour :
+
+```sh
+oc get node --selector=nvidia.com/gpu.product=${GPU_NAME}-SHARED -o json | jq '.items[0].status.capacity'
+```
+
+**Résultat attendu :**
+
+```json
+{
+  "cpu": "28",
+  "devices.kubevirt.io/kvm": "1k",
+  "devices.kubevirt.io/tun": "1k",
+  "devices.kubevirt.io/vhost-net": "1k",
+  "ephemeral-storage": "975760576Ki",
+  "hugepages-1Gi": "0",
+  "hugepages-2Mi": "0",
+  "memory": "131711436Ki",
+  "nvidia.com/gpu": "8",
+  "pods": "250"
+}
+```
+
+### Étape 7 : Relancer le Job de Test
 
 Relancez le job de test pour vérifier que le Time Slicing est bien activé.
 
